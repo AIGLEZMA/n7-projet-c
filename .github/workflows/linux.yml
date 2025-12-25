@@ -1,0 +1,52 @@
+name: Linux build & tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y build-essential valgrind
+
+      - name: Dispatch by commit message
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          echo "Commit message: $MSG"
+
+          shopt -s nocasematch
+
+          if [[ "$MSG" == coord:* ]]; then
+            make test_coord
+            make runtest_coord
+
+          elif [[ "$MSG" == grille:* ]]; then
+            make test_grille
+            make runtest_grille
+
+          elif [[ "$MSG" == liste:* ]]; then
+            make test_liste_noeud
+            make runtest_liste_noeud
+
+          elif [[ "$MSG" == test_dijkstra:* ]]; then
+            make test_dijkstra
+            make runtest_dijkstra
+
+          elif [[ "$MSG" == debug:* ]]; then
+            make dijkstra_debug
+
+          elif [[ "$MSG" == dijkstra:* ]]; then
+            make dijkstra
+
+          elif [[ "$MSG" == all:* ]]; then
+            make all
+
+          else
+            echo "No prefix found → default: make all"
+            make all
+          fi

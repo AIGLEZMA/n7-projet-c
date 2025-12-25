@@ -1,4 +1,5 @@
 #include "coord.h"
+#include "math.h"
 
 coord_t creer_coord(int x, int y) {
     coord_t coord;
