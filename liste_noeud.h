@@ -1,6 +1,3 @@
-#ifndef LIST_H
-#define LIST_H
-
 #include <stdbool.h>
 #include "coord.h"
 
