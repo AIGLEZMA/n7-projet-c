@@ -30,3 +30,5 @@ Thumbs.db # Windows
 .vscode/ # VS Code settings
 *~ # Backup files
 
+# Allow teacher-provided library
+!libt.a
