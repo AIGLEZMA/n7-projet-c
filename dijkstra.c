@@ -1,5 +1,7 @@
 #include "dijkstra.h"
 #include "animation.h"
+#include <stdlib.h>
+#include <math.h>
 
 /**
  * cout : calcule le coût pour rejoindre le noeud suivant depuis le noeud
@@ -18,6 +20,12 @@
  * @return coût pour passer de courant à suivant
  */
 static float cout(grille_t grille, coord_t courant, coord_t suivant) {
+    float base = distance_euclidienne(courant, suivant);
+    float denivele = get_hauteur(grille, suivant) - get_hauteur(grille, courant);
+    if (denivele > 0.0f) {
+        base += denivele;
+    }
+    return base;
 }
 
 /**
@@ -35,7 +43,23 @@ static float cout(grille_t grille, coord_t courant, coord_t suivant) {
  * @param source noeud de départ du chemin
  * @param noeud noeud vers lequel on veut construire le chemin depuis le départ
  */
-// TODO: construire_chemin_vers
+static void construire_chemin_vers(
+        liste_noeud_t* chemin,
+        const liste_noeud_t* visites,
+        coord_t source,
+        coord_t noeud
+    ) {
+    if (!memes_coord(noeud, source)) {
+        coord_t precedent = precedent_noeud_liste(visites, noeud);
+        construire_chemin_vers(chemin, visites, source, precedent);
+    }
+    inserer_noeud_liste(
+            chemin,
+            noeud,
+            precedent_noeud_liste(visites, noeud),
+            cout_noeud_liste(visites, noeud)
+    );
+}
 
 float dijkstra(
         grille_t grille, 
@@ -43,7 +67,61 @@ float dijkstra(
         float seuil,
         liste_noeud_t** chemin
     ) {
-    // TODO
-}
+    liste_noeud_t* a_traiter = creer_liste();
+    liste_noeud_t* visites = creer_liste();
+    coord_t no_prec = creer_coord(-1, -1);
 
+    inserer_noeud_liste(a_traiter, source, no_prec, 0.0f);
+
+    animate_source(source);
+    animate_destination(destination);
+
+    while (!est_vide_liste(a_traiter)) {
+        coord_t courant = min_noeud_liste(a_traiter);
+        float cout_courant = cout_noeud_liste(a_traiter, courant);
+        coord_t prec_courant = precedent_noeud_liste(a_traiter, courant);
+
+        supprimer_noeud_liste(a_traiter, courant);
+        inserer_noeud_liste(visites, courant, prec_courant, cout_courant);
+
+        animate_visiting(courant);
+
+        if (memes_coord(courant, destination)) {
+            break;
+        }
+
+        coord_t* voisins = NULL;
+        size_t n_voisins = get_voisins(grille, courant, seuil, &voisins);
+        for (size_t i = 0; i < n_voisins; i++) {
+            coord_t voisin = voisins[i];
+            animate_neighbor(voisin);
+
+            if (contient_noeud_liste(visites, voisin)) {
+                continue;
+            }
+
+            float alt = cout_courant + cout(grille, courant, voisin);
+            if (alt < cout_noeud_liste(a_traiter, voisin)) {
+                inserer_noeud_liste(a_traiter, voisin, courant, alt);
+            }
+        }
+        free(voisins);
+        animate_visited(visites);
+    }
+
+    float resultat = cout_noeud_liste(visites, destination);
+
+    if (chemin != NULL) {
+        *chemin = creer_liste();
+        if (contient_noeud_liste(visites, destination)) {
+            construire_chemin_vers(*chemin, visites, source, destination);
+        }
+        animate_path(*chemin);
+    }
+
+    detruire_liste(&a_traiter);
+    detruire_liste(&visites);
+
+    return resultat;
+}
 
